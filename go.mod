@@ -1,8 +1,5 @@
-module github.com/rytrose/beeping
+module github.com/rytrose/golsd
 
 go 1.12
 
-require (
-	github.com/faiface/beep v1.0.1
-	github.com/hajimehoshi/oto v0.4.0 // indirect
-)
+require github.com/faiface/beep v1.0.1
