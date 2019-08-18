@@ -12,31 +12,31 @@ import (
 	"github.com/faiface/beep/wav"
 )
 
-type lsd struct {
+type audio struct {
 	buffers []*beep.Buffer
 	formats []beep.Format
 	beats   [][]*beep.Buffer
 }
 
-func (l *lsd) SampleRate() beep.SampleRate {
-	return l.formats[0].SampleRate
+func (a *audio) SampleRate() beep.SampleRate {
+	return a.formats[0].SampleRate
 }
 
-func (l *lsd) Speech(p int) beep.StreamSeeker {
-	buffer := l.buffers[p]
+func (a *audio) Speech(p int) beep.StreamSeeker {
+	buffer := a.buffers[p]
 	return buffer.Streamer(0, buffer.Len())
 }
 
-func (l *lsd) Beat(p int) beep.StreamSeeker {
-	buffer := l.beats[p][rand.Intn(4)]
+func (a *audio) Beat(p int) beep.StreamSeeker {
+	buffer := a.beats[p][rand.Intn(4)]
 	return buffer.Streamer(0, buffer.Len())
 }
 
-func loadLSD() *lsd {
+func loadLSDAudio() *audio {
 	moot := &sync.Mutex{}
 	wg := sync.WaitGroup{}
 
-	sounds := &lsd{
+	s := &audio{
 		buffers: make([]*beep.Buffer, 0),
 		formats: make([]beep.Format, 0),
 		beats:   make([][]*beep.Buffer, 0),
@@ -53,7 +53,6 @@ func loadLSD() *lsd {
 				panic(fmt.Sprintf("unable to open wav stream: %s", err))
 			}
 
-			sounds.formats = append(sounds.formats, format)
 			buffer := beep.NewBuffer(format)
 			buffer.Append(streamer)
 			streamer.Close()
@@ -83,16 +82,17 @@ func loadLSD() *lsd {
 			}
 			bufferWG.Wait()
 
-			// Use mutex to ensure buffers and beats are in the same order
+			// Use mutex to ensure buffers, formats, and beats are in the same order
 			moot.Lock()
-			sounds.buffers = append(sounds.buffers, buffer)
-			sounds.beats = append(sounds.beats, bufferBeats)
+			s.buffers = append(s.buffers, buffer)
+			s.formats = append(s.formats, format)
+			s.beats = append(s.beats, bufferBeats)
 			moot.Unlock()
 		}(name)
 	}
 	wg.Wait()
 
-	return sounds
+	return s
 }
 
 var (
@@ -107,8 +107,8 @@ func main() {
 	// Seed RNG
 	rand.Seed(time.Now().Unix())
 
-	// Fetch sounds from s3
-	l := loadLSD()
+	// Fetch audio from s3
+	l := loadLSDAudio()
 
 	// Initialize audio settings
 	speaker.Init(l.SampleRate(), l.SampleRate().N(time.Second/30))
@@ -167,7 +167,7 @@ func main() {
 			Silent: false,
 		}
 
-		// Plays the sounds by adding them to the playing mixer
+		// Plays the Streamers by adding them to the playing mixer
 		mixer.Add(speech, beat)
 
 		// Wait for playback to be done

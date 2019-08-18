@@ -11,6 +11,7 @@ import (
 
 // PrintMemUsage outputs the current, total and OS memory being used. As well as the number
 // of garage collection cycles completed.
+// Taken from https://golangcode.com/print-the-current-memory-usage/
 func PrintMemUsage() {
 	var m runtime.MemStats
 	runtime.ReadMemStats(&m)
@@ -21,6 +22,7 @@ func PrintMemUsage() {
 	fmt.Printf("\tNumGC = %v\n", m.NumGC)
 }
 
+// Taken from https://golangcode.com/print-the-current-memory-usage/
 func bToMb(b uint64) uint64 {
 	return b / 1024 / 1024
 }
