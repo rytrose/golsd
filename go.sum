@@ -29,3 +29,7 @@ golang.org/x/sys v0.0.0-20181228144115-9a3f9b0469bb h1:pf3XwC90UUdNPYWZdFjhGBE7D
 golang.org/x/sys v0.0.0-20181228144115-9a3f9b0469bb/go.mod h1:STP8DvDyc/dI5b8T5hshtkjS+E42TnysNCUPdjciGhY=
 golang.org/x/text v0.3.0/go.mod h1:NqM8EUOU14njkJ3fqMW+pc6Ldnwhi/IjpwHt7yyuwOQ=
 gopkg.in/DATA-DOG/go-sqlmock.v1 v1.3.0/go.mod h1:OdE7CF6DbADk7lN8LIKRzRJTTZXIjtWgA5THM5lhBAw=
+honnef.co/go/js/dom v0.0.0-20190526011328-ebc4cf92d81f h1:b3Q9PqH+5NYHfIjNUEN+f8lYvBh9A25AX+kPh8dpYmc=
+honnef.co/go/js/dom v0.0.0-20190526011328-ebc4cf92d81f/go.mod h1:sUMDUKNB2ZcVjt92UnLy3cdGs+wDAcrPdV3JP6sVgA4=
+honnef.co/go/js/dom/v2 v2.0.0-20190526011328-ebc4cf92d81f h1:rxpwPRn5voIeZmBGJvlhLwWo9fSZSciAAfHz6sAHGCY=
+honnef.co/go/js/dom/v2 v2.0.0-20190526011328-ebc4cf92d81f/go.mod h1:H5R0jAIe6IchQE778FS2QcrNVgS4vPFb0HPb72n/IJI=

@@ -10,6 +10,7 @@ import (
 	"github.com/faiface/beep"
 	"github.com/faiface/beep/speaker"
 	"github.com/faiface/beep/wav"
+	"honnef.co/go/js/dom/v2"
 )
 
 type audio struct {
@@ -107,11 +108,13 @@ func main() {
 	// Seed RNG
 	rand.Seed(time.Now().Unix())
 
-	// Fetch audio from s3
-	l := loadLSDAudio()
-
-	// Initialize audio settings
-	speaker.Init(l.SampleRate(), l.SampleRate().N(time.Second/30))
+	// Create channel for DOM loaded
+	domLoaded := make(chan bool)
+	d := dom.GetWindow().Document()
+	d.AddEventListener("DOMContentLoaded", false, func(event dom.Event) {
+		fmt.Println("DOM loaded.")
+		domLoaded <- true
+	})
 
 	// Speech period between 30s and 1m
 	speechPeriod = float64(time.Duration(30.0)*time.Second) / float64(time.Second)
@@ -127,25 +130,65 @@ func main() {
 	// Used to signal end of playback
 	done := make(chan bool)
 
-	// Play.pause
-	ctrl = &beep.Ctrl{Streamer: mixer, Paused: false}
+	// Use for play/pause
+	ctrl = &beep.Ctrl{Streamer: mixer, Paused: true}
+
+	// document.ready()
+	audioLoaded := make(chan bool)
+	go func(domLoaded chan bool, audioLoaded chan bool) {
+		// Ensure DOM is loaded
+		<-domLoaded
+
+		// Link button to play/pause
+		togglePlackbackButton := d.GetElementByID("togglePlayback").(*dom.HTMLButtonElement)
+		togglePlackbackButton.AddEventListener("click", false, func(event dom.Event) {
+			if ctrl.Paused {
+				togglePlackbackButton.Class().Remove("button-green")
+				togglePlackbackButton.Class().Add("button-red")
+				togglePlackbackButton.SetInnerHTML("Pause")
+			} else {
+				togglePlackbackButton.Class().Remove("button-red")
+				togglePlackbackButton.Class().Add("button-green")
+				togglePlackbackButton.SetInnerHTML("Play")
+			}
+			ctrl.Paused = !ctrl.Paused
+		})
+		fmt.Println("Playback button registered.")
+
+		// Wait until audio is loaded
+		<-audioLoaded
+
+		// Remove loading div
+		loading := d.GetElementByID("loading").(*dom.HTMLDivElement)
+		togglePlackbackButton.Class().Remove("hidden")
+		loading.Class().Add("hidden")
+
+	}(domLoaded, audioLoaded)
+
+	// Fetch audio from s3
+	a := loadLSDAudio()
+
+	// Initialize audio settings
+	speaker.Init(a.SampleRate(), a.SampleRate().N(time.Second/30))
 
 	// Send to output
 	speaker.Play(ctrl)
+
+	audioLoaded <- true
 
 	// Used for volume sinusoid calc
 	startTime = time.Now()
 
 	for {
 		// Pick a random speech sample
-		fileIndex := rand.Intn(len(l.buffers))
+		fileIndex := rand.Intn(len(a.buffers))
 
 		// Get current time
 		t = float64(time.Since(startTime)) / float64(time.Second)
 
 		// Wrap speech sample in volume
 		speech := &volume{
-			Streamer: beep.Seq(l.Speech(fileIndex), beep.Callback(func() {
+			Streamer: beep.Seq(a.Speech(fileIndex), beep.Callback(func() {
 				done <- true
 			})),
 			Base: 2,
@@ -158,7 +201,7 @@ func main() {
 
 		// Wrap beat in volume
 		beat := &volume{
-			Streamer: l.Beat(fileIndex),
+			Streamer: a.Beat(fileIndex),
 			Base:     2,
 			VolumeFunc: func() float64 {
 				// Set beat volume (-6 to 0)
